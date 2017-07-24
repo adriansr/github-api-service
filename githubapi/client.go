@@ -8,6 +8,8 @@ import (
 
 	"io/ioutil"
 
+	"net/url"
+
 	"github.com/adriansr/github-api-service/model"
 	"github.com/adriansr/github-api-service/util"
 )
@@ -93,8 +95,9 @@ func (response *searchResponse) users() []model.User {
 // (private) searchUsers perform a user search query against GitHub API
 // filtering by location
 func (client *Client) searchUsers(location string, count int, page int) (*searchResponse, error) {
-	url := fmt.Sprintf("%s/search/users?sort=repositories&order=desc&per_page=%d&page=%d&q=location:%s",
-		client.apiUrl, count, page, location)
+	query := fmt.Sprintf("sort=repositories&order=desc&per_page=%d&page=%d&q=location:%s",
+		count, page, url.QueryEscape(location))
+	url := fmt.Sprintf("%s/search/users?%s", client.apiUrl, query)
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, util.WrapError("failed creating a request object", err)
