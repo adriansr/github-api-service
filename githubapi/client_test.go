@@ -62,7 +62,7 @@ func makeResponse(totalCount int, incomplete bool, count int) searchResponse {
 	return searchResponse{totalCount, incomplete, items}
 }
 
-func TestClient(t *testing.T) {
+func TestParsing(t *testing.T) {
 	response := makeResponse(5000, false, 50)
 	handler := &RequestResponseTester{nil, 200, toJSON(t, response)}
 	server := httptest.NewServer(handler)
@@ -83,12 +83,62 @@ func TestClient(t *testing.T) {
 	assertEquals(t, response.Items, result)
 }
 
-/*
-	// test default count
+func TestNoAuth(t *testing.T) {
+	handler := &RequestResponseTester{nil, 500, []byte("bye")}
+	server := httptest.NewServer(handler)
+	defer server.Close()
 
-	// test count
+	client, err := NewClient(noUser, noPass, server.URL, timeout)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// test count invalid
+	client.GetTopContributors("Barcelona", 50)
 
-	// test city encoding
-*/
+	user, pass, ok := handler.Request.BasicAuth()
+	if user != "" || pass != "" || ok {
+		t.Fatalf("Wrong auth: user:'%s' pass:'%s' valid:%v", user, pass, ok)
+	}
+}
+
+func TestWithAuth(t *testing.T) {
+	someUser, somePass := "someUser", "somePass"
+	handler := &RequestResponseTester{nil, 500, []byte("bye")}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	client, err := NewClient(someUser, somePass, server.URL, timeout)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client.GetTopContributors("Barcelona", 50)
+
+	user, pass, ok := handler.Request.BasicAuth()
+	if user != someUser || pass != somePass || !ok {
+		t.Fatalf("Wrong auth: user:'%s' pass:'%s' valid:%v", user, pass, ok)
+	}
+}
+
+func TestEscaping(t *testing.T) {
+	handler := &RequestResponseTester{nil, 500, []byte("bye")}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	client, err := NewClient(noUser, noPass, server.URL, timeout)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	city := "Rio de Janeiro"
+	client.GetTopContributors(city, 50)
+
+	if handler.Request == nil {
+		t.Fatal("request not sent")
+	}
+	expected := fmt.Sprintf("location:%s", city)
+	query := handler.Request.URL.Query().Get("q")
+	if query != expected {
+		t.Fatalf("unexpected query string: '%s' vs '%s'", query, expected)
+	}
+}
