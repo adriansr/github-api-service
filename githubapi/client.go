@@ -111,6 +111,12 @@ func (client *Client) searchUsers(location string, count int, page int) (*search
 		return nil, util.WrapError("failed creating an HTTP client", err)
 	}
 	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		return nil, util.NewError(fmt.Sprintf("HTTP request failed with code %d",
+			response.StatusCode))
+	}
+
 	var searchResult searchResponse
 	if debugBody {
 		body, err := ioutil.ReadAll(response.Body)

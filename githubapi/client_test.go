@@ -24,10 +24,20 @@ type RequestResponseTester struct {
 	Response []byte
 }
 
+type RedirectHandler struct {
+	destination string
+}
+
 func (tester *RequestResponseTester) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	tester.Request = request
 	writer.WriteHeader(tester.Code)
 	writer.Write(tester.Response)
+}
+
+func (handler RedirectHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Add("Location", handler.destination)
+	writer.WriteHeader(http.StatusTemporaryRedirect)
+	writer.Write([]byte{})
 }
 
 func toJSON(t *testing.T, obj searchResponse) []byte {
@@ -141,4 +151,43 @@ func TestEscaping(t *testing.T) {
 	if query != expected {
 		t.Fatalf("unexpected query string: '%s' vs '%s'", query, expected)
 	}
+}
+
+func TestApiError(t *testing.T) {
+	handler := &RequestResponseTester{nil, 500, []byte("bye")}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	client, err := NewClient(noUser, noPass, server.URL, timeout)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.GetTopContributors("Barcelona", 50)
+	if err == nil {
+		t.Fatal("failure expected")
+	}
+	t.Errorf("got %v", err)
+}
+
+func TestRedirect(t *testing.T) {
+	response := makeResponse(5000, false, 50)
+	handler := &RequestResponseTester{nil, 200, toJSON(t, response)}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	server2 := httptest.NewServer(RedirectHandler{server.URL})
+	client, err := NewClient(noUser, noPass, server2.URL, timeout)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := client.GetTopContributors("Barcelona", 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result) != 50 {
+		t.Fatalf("result: %v", result)
+	}
+	assertEquals(t, response.Items, result)
 }
