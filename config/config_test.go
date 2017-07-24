@@ -46,7 +46,7 @@ func TestLoadRaw(t *testing.T) {
 						}
 				}`)},
 			// expect a duration of 1.5s, here in nanos:
-			want:    &Config{Client: HTTPClientConfig{Duration{1500000000}}},
+			want:    &Config{Client: HTTPClientConfig{Duration{1500000000}, ""}},
 			wantErr: false,
 		},
 		{
@@ -56,7 +56,6 @@ func TestLoadRaw(t *testing.T) {
         					"timeout": ""
 						}
 				}`)},
-			// expect a duration of 1.5s, here in nanos:
 			want:    nil,
 			wantErr: true,
 		},
@@ -67,7 +66,6 @@ func TestLoadRaw(t *testing.T) {
         					"timeout": 15
 						}
 				}`)},
-			// expect a duration of 1.5s, here in nanos:
 			want:    nil,
 			wantErr: true,
 		},
@@ -78,7 +76,6 @@ func TestLoadRaw(t *testing.T) {
         					"timeout": "
 						}
 				}`)},
-			// expect a duration of 1.5s, here in nanos:
 			want:    nil,
 			wantErr: true,
 		},
@@ -90,15 +87,16 @@ func TestLoadRaw(t *testing.T) {
         					"password": "password"
 						},
 					    "client": {
-        					"timeout": "500ms"
+							"timeout": "500ms",
+							"api_url": "https://api.github.com"
 						},
 						"server": {
 							"listen": "1.2.3.4:8080"
 						}
 				}`)},
-			// expect a duration of 1.5s, here in nanos:
+
 			want: &Config{GitHubCredentials{"user", "password"},
-				HTTPClientConfig{Duration{500000000}},
+				HTTPClientConfig{Duration{500000000}, "https://api.github.com"},
 				HTTPServerConfig{"1.2.3.4:8080"}},
 			wantErr: false,
 		},

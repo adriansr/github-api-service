@@ -4,7 +4,8 @@
         "password": ""
     },
     "client": {
-        "timeout": "3s"
+        "timeout": "3s",
+        "api_url": "https://api.github.com"
     },
     "server": {
         "listen": ":8080"

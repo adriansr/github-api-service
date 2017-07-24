@@ -11,6 +11,9 @@ User-Agent:
     Header required in requests.
     Include username / repo path so I can be contacted
 
+Missing:
+    Cache to avoid frequent queries to GitHub for the same city
 
 Ref:
 https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1
+

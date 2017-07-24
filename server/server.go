@@ -2,15 +2,16 @@ package server
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
-	base "github.com/adriansr/github-api-service"
+	"github.com/adriansr/github-api-service/model"
 )
 
 type Server struct {
 	address string
-	client  base.Client
+	client  model.TopContributorGetter
 }
 
 type ApiError struct {
@@ -18,7 +19,7 @@ type ApiError struct {
 }
 
 const (
-	apiPath      = "/v1/contributors"
+	apiPath      = "/search"
 	serverName   = "adriansr/github-api-service"
 	defaultCount = 50
 )
@@ -37,10 +38,13 @@ func sendError(writer http.ResponseWriter, code int, msg string) {
 	}
 	writer.WriteHeader(code)
 	writer.Write(body)
+	log.Printf("Error response %d '%s'", code, msg)
 }
 
 func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	setCommonHeaders(writer)
+
+	log.Printf("Serving API")
 
 	// only accept GET requests
 	if request.Method != "GET" {
@@ -70,7 +74,7 @@ func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	result, err := server.client.Search(city, count)
+	result, err := server.client.GetTopContributors(city, count)
 	if err != nil {
 		sendError(writer, http.StatusInternalServerError,
 			"query failed: "+err.Error())
@@ -84,14 +88,23 @@ func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 	}
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(body)
+	log.Printf("Processed request (%d results)", len(result))
 }
 
-func New(address string, client base.Client) (*Server, error) {
+func notFound(writer http.ResponseWriter, request *http.Request) {
+	log.Printf("Request for unknown path: %s", request.URL)
+	http.NotFound(writer, request)
+}
+
+func New(address string, client model.TopContributorGetter) (*Server, error) {
 	server := &Server{address, client}
 	http.Handle(apiPath, server)
+	http.HandleFunc("/", notFound)
+	log.Printf("Registered API endpoint '%s'", apiPath)
 	return server, nil
 }
 
 func (server *Server) Run() error {
+	log.Printf("Accepting requests at '%s'", server.address)
 	return http.ListenAndServe(server.address, nil)
 }

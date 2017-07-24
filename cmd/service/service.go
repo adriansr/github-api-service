@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/adriansr/github-api-service/config"
-	"github.com/adriansr/github-api-service/github"
+	"github.com/adriansr/github-api-service/githubapi"
 	"github.com/adriansr/github-api-service/server"
 )
 
@@ -25,20 +25,21 @@ func main_Demo1() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client, err := github.NewClient(
+	client, err := githubapi.NewClient(
 		config.Credentials.Username,
 		config.Credentials.Password,
+		config.Client.ApiUrl,
 		config.Client.RequestTimeout.Duration)
 	if err != nil {
 		log.Fatal(err)
 	}
-	result, err := client.Search(location, count)
+	result, err := client.GetTopContributors(location, count)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("Got %d results:\n", len(result))
 	for idx, elem := range result {
-		fmt.Printf("%d: %s (id:%d)\n", idx, elem.Name, elem.ID)
+		fmt.Printf("%d: %s (id:%d)\n", idx, elem.Username, elem.ID)
 	}
 }
 
@@ -47,15 +48,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client, err := github.NewClient(
+	client, err := githubapi.NewClient(
 		config.Credentials.Username,
 		config.Credentials.Password,
+		config.Client.ApiUrl,
 		config.Client.RequestTimeout.Duration)
 	if err != nil {
 		log.Fatal("unable to start client: ", err)
 	}
-
-	log.Printf("Starting server at '%s'", config.Server.ListenAddress)
 
 	server, err := server.New(config.Server.ListenAddress, client)
 	if err != nil {

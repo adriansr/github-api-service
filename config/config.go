@@ -25,6 +25,7 @@ type GitHubCredentials struct {
 
 type HTTPClientConfig struct {
 	RequestTimeout Duration `json:"timeout"`
+	ApiUrl         string   `json:"api_url"`
 }
 
 type HTTPServerConfig struct {
