@@ -1,0 +1,12 @@
+{
+    "github_credentials": {
+        "username": "",
+        "password": ""
+    },
+    "client": {
+        "timeout": "3s"
+    },
+    "server": {
+        "listen": ":8080"
+    }
+}
