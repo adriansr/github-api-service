@@ -1,16 +1,13 @@
+// Package config contains a basic implementation of reading configuration
+// from a json file
 package config
 
 import (
 	"encoding/json"
 	"io/ioutil"
-	"time"
 
 	"github.com/adriansr/github-api-service/util"
 )
-
-type Duration struct {
-	Duration time.Duration
-}
 
 type Config struct {
 	Credentials GitHubCredentials `json:"github_credentials"`
@@ -47,17 +44,4 @@ func LoadFile(path string) (*Config, error) {
 			"failed reading configuration file `"+path+"`", err)
 	}
 	return LoadRaw(content)
-}
-
-func (d *Duration) UnmarshalJSON(b []byte) error {
-	if b[0] == '"' {
-		unquoted := string(b[1 : len(b)-1])
-		parsed, err := time.ParseDuration(unquoted)
-		if err != nil {
-			return err
-		}
-		d.Duration = parsed
-		return nil
-	}
-	return util.NewError("expected a string to decode a Duration")
 }
