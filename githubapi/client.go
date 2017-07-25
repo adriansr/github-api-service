@@ -80,8 +80,8 @@ func (client *Client) GetTopContributors(location string, count int) ([]model.Us
 }
 
 // (private) transforms the internal representation of the list of
-// users returned by a search query to the expected User. This is
-// necessary to not be forced to use the same field names in the output
+// users returned by a search query to the expected type []User. This is
+// necessary to avoid being forced to use the same field names in the output
 // json as GitHub uses. Alternatively a custom json-marshaler can be used.
 func (response *searchResponse) users() []model.User {
 	result := make([]model.User, len(response.Items))
