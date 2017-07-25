@@ -16,10 +16,13 @@ const (
 )
 
 func main() {
+	// load configuration
 	config, err := config.LoadFile(configFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// create a client to GitHub API
 	client, err := githubapi.NewClient(
 		config.Credentials.Username,
 		config.Credentials.Password,
@@ -29,14 +32,17 @@ func main() {
 		log.Fatal("unable to start client: ", err)
 	}
 
+	// create our HTTP API server
 	server, err := server.New(config.Server.ListenAddress, client)
 	if err != nil {
 		log.Fatal("unable to create server: ", err)
 	}
 
+	// capture SIGINT to support graceful termination with CTRL+C
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
+	// start server in a goroutine
 	go func() {
 		if err := server.Start(); err != nil {
 			log.Print("unable to start server: ", err)
@@ -44,8 +50,10 @@ func main() {
 		}
 	}()
 
+	// wait for termination (signal or server failure)
 	<-c
 
+	// terminate
 	server.Stop()
 	log.Print("Terminated")
 }
