@@ -3,6 +3,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
 
 	"github.com/adriansr/github-api-service/config"
 	"github.com/adriansr/github-api-service/githubapi"
@@ -31,8 +33,19 @@ func main() {
 	if err != nil {
 		log.Fatal("unable to create server: ", err)
 	}
-	err = server.Run()
-	if err != nil {
-		log.Fatal("unable to start server: ", err)
-	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	go func() {
+		if err := server.Start(); err != nil {
+			log.Print("unable to start server: ", err)
+			c <- os.Interrupt
+		}
+	}()
+
+	<-c
+
+	server.Stop()
+	log.Print("Terminated")
 }

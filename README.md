@@ -14,6 +14,11 @@ User-Agent:
 Missing:
     Cache to avoid frequent queries to GitHub for the same city
 
+Response:
+    Add metadata like `count`?
+
 Ref:
 https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1
 
+
+go test ./...

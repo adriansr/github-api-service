@@ -12,10 +12,9 @@ import (
 )
 
 const (
-	noUser      = ""
-	noPass      = ""
-	timeout     = 3 * time.Second
-	partialJson = `{"total_count": 5, "items": [ { "id":1, }]}`
+	noUser  = ""
+	noPass  = ""
+	timeout = 3 * time.Second
 )
 
 type RequestResponseTester struct {
@@ -167,7 +166,6 @@ func TestApiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("failure expected")
 	}
-	t.Errorf("got %v", err)
 }
 
 func TestRedirect(t *testing.T) {

@@ -3,24 +3,40 @@ package server
 import (
 	"encoding/json"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 
 	"github.com/adriansr/github-api-service/model"
+	"github.com/adriansr/github-api-service/util"
 )
 
+// Server struct contains the fields to model our API server
 type Server struct {
-	address string
-	client  model.TopContributorGetter
+	// Address the server is bound to
+	Address net.Listener
+
+	// interface to fetch the top contributors
+	client model.TopContributorGetter
+
+	// multiplexor for requests
+	handler *http.ServeMux
+
+	// internal server handle
+	underlying *http.Server
 }
 
+// ApiError struct is used to represent the error responses from the API
 type ApiError struct {
 	Error string `json:"error"`
 }
 
 const (
-	apiPath      = "/search"
-	serverName   = "adriansr/github-api-service"
+	// path for the API endpoint
+	apiPath = "/api/top-contributors"
+	// `Server` header to use in HTTP responses
+	serverName = "adriansr/github-api-service"
+	// by default 50 results are fetched if count is not specified
 	defaultCount = 50
 )
 
@@ -41,10 +57,9 @@ func sendError(writer http.ResponseWriter, code int, msg string) {
 	log.Printf("Error response %d '%s'", code, msg)
 }
 
+// ServeHTTP handles HTTP requests to the API endpoint
 func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	setCommonHeaders(writer)
-
-	log.Printf("Serving API")
 
 	// only accept GET requests
 	if request.Method != "GET" {
@@ -54,9 +69,7 @@ func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	/*if request.URL.Path != apiPath {
-		sendError(writer, http.StatusNotFound, "not found")
-	}*/
+	// check count
 	params := request.URL.Query()
 	count, err := strconv.Atoi(params.Get("count"))
 	if err != nil {
@@ -68,18 +81,22 @@ func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
+	// check city
 	city := params.Get("city")
 	if len(city) == 0 {
 		sendError(writer, http.StatusBadRequest, "missing parameter: city")
 		return
 	}
 
+	// forward request to the TopContributorGetter instace
 	result, err := server.client.GetTopContributors(city, count)
 	if err != nil {
 		sendError(writer, http.StatusInternalServerError,
 			"query failed: "+err.Error())
 		return
 	}
+
+	// convert to JSON
 	body, err := json.Marshal(result)
 	if err != nil {
 		sendError(writer, http.StatusInternalServerError,
@@ -96,15 +113,37 @@ func notFound(writer http.ResponseWriter, request *http.Request) {
 	http.NotFound(writer, request)
 }
 
+// New creates an API Server that binds to the given address and uses the
+// passed client to get the top contributors
 func New(address string, client model.TopContributorGetter) (*Server, error) {
-	server := &Server{address, client}
-	http.Handle(apiPath, server)
-	http.HandleFunc("/", notFound)
+
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		return nil, util.WrapError("Listen failed", err)
+	}
+	server := &Server{listener, client, http.NewServeMux(), nil}
+	server.handler.Handle(apiPath, server)
+	// attach a NotFound handler to / so it can log 404 errors
+	server.handler.HandleFunc("/", notFound)
 	log.Printf("Registered API endpoint '%s'", apiPath)
 	return server, nil
 }
 
-func (server *Server) Run() error {
-	log.Printf("Accepting requests at '%s'", server.address)
-	return http.ListenAndServe(server.address, nil)
+// Start starts accepting requests on the server, blocking until explicitly
+// terminated
+func (server *Server) Start() error {
+	if server.underlying != nil {
+		return util.NewError("already running")
+	}
+	log.Printf("Accepting requests at %s", server.Address.Addr())
+	server.underlying = &http.Server{Handler: server.handler}
+	return server.underlying.Serve(server.Address)
+}
+
+// Stop shuts the server down
+func (server *Server) Stop() error {
+	if server.underlying == nil {
+		return util.NewError("already stopped")
+	}
+	return server.underlying.Shutdown(nil)
 }
