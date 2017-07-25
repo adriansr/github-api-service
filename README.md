@@ -5,20 +5,20 @@ written in Go
 ## Table of contents
 1. [Prerequisites](#prerequisites)
 2. [Download & build](#download)
-3. [Running unit tests](#tests)
+3. [Running unit tests](#running-unit-tests)
 4. [Setup](#setup)
-5. [Running the service](#running)
-6. [Performing a query](#query)
-7. [Stopping the service](#stopping)
-8. [Missing features](#missing)
-9. [Concurrency and scalability](#concurrency)
+5. [Running the service](#running-the-service)
+6. [Performing a query](#performing-a-query)
+7. [Stopping the service](#stopping-the-service)
+8. [Missing features](#missing-features)
+9. [Concurrency and scalability](#concurrency-and-scalability)
 
-## Prerequisites <a name="prerequisites"></a>
+## Prerequisites
 
 This program needs Go 1.8 which can be downloaded at https://golang.org/dl/.
 It has been tested to work under Linux and macOS.
 
-## Download & build <a name="download"></a>
+## Download & build
 
 If you don't already have a `$GOPATH`, just create one:
 
@@ -35,13 +35,13 @@ The built binary will be at `bin/service`
     $ ./bin/service
     2017/07/26 00:41:54 failed reading configuration file `config.json` [caused by: open config.json: no such file or directory]
 
-## Running unit tests <a name="tests"></a>
+## Running unit tests
 
 Use go test to launch tests for all submodules in the project
 
     $ go test github.com/adriansr/github-api-service/...
 
-## Setup <a name="setup"></a>
+## Setup
 
 Copy the provided sample configuration to the current directory:
 
@@ -68,7 +68,7 @@ Here you can modify the HTTP server bind address or any other parameter.
 Associating a GitHub account is optional, but it allows to perform more
 queries per second as search limits are pretty low.
 
-## Running the service <a name="running"></a>
+## Running the service
 
 With a valid `config.json` the service will now start
 
@@ -76,7 +76,7 @@ With a valid `config.json` the service will now start
     2017/07/26 00:09:49 Registered API endpoint '/api/top-contributors'
     2017/07/26 00:09:49 Accepting requests at [::]:8080
 
-## Performing a query <a name="query"></a>
+## Performing a query
 
 The service accepts requests at http://localhost:8080/api/top-contributors.
 Two parameters are accepted:
@@ -98,12 +98,12 @@ Result:
 
 The output is in JSON format. Consists of a list of objects with an `id` field of integer type (the user's GitHub id) and `name`, a string with the GitHub username.
 
-## Stopping the service <a name="stopping"></a>
+## Stopping the service
 
 The service can be stopped gracefully by sending it a SIGINT signal. That is
 pressing CTRL+C on its running terminal or using `kill -INT`.
 
-## Missing features <a name="missing"></a>
+## Missing features
 
 Due to limited time available many features have not been implemented:
 
@@ -114,7 +114,7 @@ current maximum of 100 results per query.
 
 * Authentication, as an optional assignment.
 
-## Concurrency and scalability <a name="concurrency"></a>
+## Concurrency and scalability
 
 All Go language features and libraries from the used are concurrent. As Go
 already does a great job at handling concurrency with its goroutinges, there
