@@ -4,7 +4,7 @@ written in Go
 
 ## Table of contents
 1. [Prerequisites](#prerequisites)
-2. [Download & build](#download)
+2. [Download & build](#download--build)
 3. [Running unit tests](#running-unit-tests)
 4. [Setup](#setup)
 5. [Running the service](#running-the-service)
